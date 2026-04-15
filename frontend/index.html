@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Zomato District - discover events near you</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <div class="logo-mark">Z</div>
+      <div>
+        Zomato <span class="logo-sub">District</span>
+      </div>
+    </div>
+    <nav class="site-nav">
+      <a href="index.html">Discover</a>
+      <a href="#">Saved</a>
+      <a href="#">Account</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <h1>Nights out, <span class="accent">done right.</span></h1>
+    <p>Concerts, comedy, DJ nights and food festivals - curated for your city. Filter, book and turn up.</p>
+
+    <div class="filters">
+      <input type="text" id="searchBox" class="search-box" placeholder="Search events, artists, venues..." />
+      <select id="categoryFilter">
+        <option value="">All categories</option>
+      </select>
+      <select id="cityFilter">
+        <option value="">All cities</option>
+      </select>
+    </div>
+  </section>
+
+  <h2 class="section-title">Upcoming events <span class="count" id="eventCount"></span></h2>
+  <div id="eventGrid" class="event-grid"></div>
+  <div id="emptyState" class="empty-state hidden">No events match your filters. Try clearing them.</div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    Zomato District demo - built for DBMS lab project - not a real booking service
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/home.js"></script>
+</body>
+</html>
