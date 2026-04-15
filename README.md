@@ -7,9 +7,16 @@ book tickets with promo codes, and leave reviews. The project has two halves:
 - **Database side** - MySQL schema with 13 tables, full DDL/DML/DQL/TCL/DCL,
   views, stored procedures, user-defined functions. Orchestrated from a single
   Python script so screenshots for the report are reproducible.
-- **Frontend side** - static HTML/CSS/JS (hosted on GitHub Pages) that mirrors
-  the database as a small visual demo. No backend - all data lives in
-  `frontend/js/data.js`.
+- **Backend side** - a small Flask app (`backend/app.py`) that exposes the
+  database over JSON endpoints and serves the frontend as static files from
+  the same origin. Also exposes a read-only `/api/query` endpoint used by the
+  SQL playground page.
+- **Frontend side** - plain HTML/CSS/JS that fetches live data from the Flask
+  backend. The Discover / Event / Booking pages hit the real `zomato_district`
+  database; confirming a booking actually writes to `Booking` + `Transaction`
+  via `sp_book_event`. A new **Queries** page lets you run ad-hoc SQL
+  (SELECT/SHOW/DESCRIBE/EXPLAIN/WITH only) or pick from a curated list of
+  preset queries pulled straight out of `queries.sql` and `advanced.sql`.
 
 ---
 
@@ -27,16 +34,23 @@ dbms_project/
 │   ├── queries.sql          ← DQL showcase (joins, grouping, subqueries…)
 │   ├── advanced.sql         ← views, functions, stored procedures
 │   └── run_all.py           ← orchestrator: runs everything end-to-end
+├── backend/
+│   ├── app.py               ← Flask app (JSON API + serves the frontend)
+│   ├── query_guard.py       ← read-only SQL validator for /api/query
+│   ├── presets.py           ← preset query list for the playground page
+│   └── requirements.txt     ← Flask + mysql-connector + python-dotenv
 ├── frontend/
 │   ├── index.html           ← event listing + filters
 │   ├── event.html           ← event detail page
 │   ├── booking.html         ← booking flow
+│   ├── queries.html         ← SQL playground (presets + custom editor)
 │   ├── css/style.css        ← matt-black + red theme
 │   └── js/
-│       ├── data.js          ← hardcoded data mirroring the DB
-│       ├── home.js          ← filter + render logic
-│       ├── event.js         ← event detail + save-to-localStorage
-│       └── booking.js       ← counter, promo codes, summary, confirm
+│       ├── utils.js         ← shared helpers + tiny fetch wrapper
+│       ├── home.js          ← filter + render (fetches /api/events)
+│       ├── event.js         ← event detail (fetches /api/events/:id)
+│       ├── booking.js       ← counter, promo codes, POST /api/bookings
+│       └── queries.js       ← presets sidebar + custom query runner
 ├── diagrams/
 │   ├── ER_Diagram_DJ.drawio.html
 │   └── Class_Diagram_DJ.drawio.html
@@ -51,7 +65,7 @@ dbms_project/
 ### 1. MySQL
 
 You need a local MySQL 8.x running on `localhost:3306`. The project was built
-and tested against MySQL 8.0 on Ubuntu.
+and tested against MySQL 8.0 on Mint Cinnamon.
 
 Create (or reuse) a user and make sure it can create databases:
 
@@ -69,7 +83,13 @@ The `WITH GRANT OPTION` bit matters - without it the DCL demo in `run_all.py`
 Python 3.9+ with these packages:
 
 ```bash
-pip install mysql-connector-python tabulate python-dotenv
+pip install mysql-connector-python tabulate python-dotenv flask
+```
+
+Or install everything the backend needs from its requirements file:
+
+```bash
+pip install -r backend/requirements.txt
 ```
 
 ### 3. Credentials
@@ -122,34 +142,76 @@ can run it as many times as you like.
 
 ---
 
-## Running the frontend
+## Running the web app (backend + frontend)
 
-The frontend is pure static HTML/CSS/JS - no build step, no backend.
+The frontend now talks to MySQL via the Flask backend, so there's one command
+to start and a single URL to open.
 
-**Quick local preview:**
+**Step 1 - seed the database** (one-time per machine, or whenever you reset):
 
 ```bash
-cd frontend
-python3 -m http.server 8765
+python3 database/run_all.py
 ```
 
-Then open http://127.0.0.1:8765/index.html. You don't *have* to use a server
-(you can double-click `index.html`) but the server avoids quirky `file://`
-behaviour.
+**Step 2 - start the backend:**
+
+```bash
+python3 backend/app.py
+```
+
+Flask listens on `http://127.0.0.1:5000` and serves both the JSON API under
+`/api/...` and the static frontend from `frontend/`.
+
+Open `http://127.0.0.1:5000/` in a browser. No other server needed.
 
 **Pages:**
 
-- `index.html` - filter by category/city/search, click a card to see details
-- `event.html?id=N` - event detail with lineup, reviews, save-for-later, book now
-- `booking.html?id=N` - counter, promo code input (`EARLYBIRD`, `GROUP25`,
-  `WEEKEND15`, `ZOMATO10`, `FIRST50`), payment dropdown, fake confirmation
+- `/` (index.html) - filter by category/city/search, fetched from `/api/events`
+- `/event.html?id=N` - event detail, lineup, reviews, save-for-later
+- `/booking.html?id=N` - counter, promo codes (`EARLYBIRD`, `GROUP25`,
+  `WEEKEND15`, `ZOMATO10`, `FIRST50`), payment dropdown. Confirming a booking
+  calls `sp_book_event`, writes real rows into `Booking` + `Transaction`,
+  decrements `Event.seats_available`, and (if a promo was applied) inserts
+  into `Booking_Offer`.
+- `/queries.html` - **SQL playground**. Sidebar of preset queries taken
+  straight from `queries.sql` and `advanced.sql` (all 14 DQL showcase queries,
+  all 3 views, both UDFs, schema metadata). Textarea for custom SQL;
+  `Ctrl/Cmd+Enter` runs the query.
+
+**Backend API at a glance:**
+
+| Method | Path                        | Purpose |
+|-------:|-----------------------------|---------|
+| GET    | `/api/categories`           | List of event categories |
+| GET    | `/api/cities`               | Distinct city list from `Location` |
+| GET    | `/api/offers`               | Active promo codes |
+| GET    | `/api/events?city=&category=&q=&upcoming=1` | Event listing, uses `fn_seats_remaining` |
+| GET    | `/api/events/<id>`          | Event detail + performers + reviews |
+| POST   | `/api/bookings`             | Create booking via `sp_book_event` (optional offer) |
+| GET    | `/api/presets`              | Preset query list for the playground |
+| POST   | `/api/query`                | Run a read-only SQL query; body: `{"sql": "..."}` |
+
+**Read-only query safety:** `/api/query` runs the validator in
+`backend/query_guard.py` (first token must be SELECT/SHOW/DESCRIBE/EXPLAIN/WITH,
+no semicolons, blacklist of DDL/DML/DCL keywords after stripping string
+literals) *and* every query is executed inside a
+`SET SESSION TRANSACTION READ ONLY; START TRANSACTION;` block that is rolled
+back at the end. Even if the validator missed something, MySQL itself refuses
+writes inside a read-only transaction.
 
 **Styling:** matt-black background with a red accent (`#ff2d45`). All colours
 are CSS variables at the top of `css/style.css`, tweak `--bg`, `--red`, etc.
 if you want a different palette.
 
-**Deploying to GitHub Pages:** push the whole repo to GitHub, go to Settings
-→ Pages, select the `main` branch and `/frontend` folder. Wait a minute, done.
+**Can this still be hosted on GitHub Pages?** Not meaningfully. Every page
+now requires the Flask backend + a locally-seeded `zomato_district` database,
+so without the backend all of them fail to load. Run it locally on whichever
+machine has the database (or deploy Flask + MySQL together if you really
+want it hosted).
+
+**Resetting after a demo:** every booking made through the UI writes a real
+row. Re-run `python3 database/run_all.py` to drop and recreate the database
+back to the seeded state.
 
 ---
 
@@ -207,6 +269,14 @@ This section is for the team - update it as you split the work.
 - **`Duplicate entry` errors during seed** - you edited `seed_data.sql` but
   left the old data in the DB. `run_all.py` drops and recreates every time,
   so just re-run it.
+- **Flask page loads but shows "Could not load events"** - the DB probably
+  isn't seeded. Run `python3 database/run_all.py` once, then reload the page.
+- **`/api/query` rejects something that looks obviously safe** - the keyword
+  blacklist is deliberately strict (it flags any bare identifier like
+  `UPDATE`, `DROP`, `INSERT`, etc. anywhere in the SQL after string literals
+  are stripped). So `` SELECT 'x' AS `update` `` fails, but `update_flag`,
+  `my_update`, or `'UPDATE me' AS note` all pass. If you hit this, rename
+  the offending identifier.
 
 ---
 

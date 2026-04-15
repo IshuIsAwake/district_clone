@@ -1,15 +1,26 @@
-(function () {
+(async function () {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
-  const ev = findEvent(id);
   const root = document.getElementById("bookingRoot");
 
-  if (!ev) {
+  if (!id) {
+    root.innerHTML = `<div class="empty-state">No event id. <a href="index.html">Back</a>.</div>`;
+    return;
+  }
+
+  let ev, offers = [];
+  try {
+    [ev, offers] = await Promise.all([
+      API.get(`/api/events/${encodeURIComponent(id)}`),
+      API.get("/api/offers"),
+    ]);
+  } catch (err) {
     root.innerHTML = `<div class="empty-state">Event not found. <a href="index.html">Back</a>.</div>`;
     return;
   }
 
-  const loc = findLocation(ev.location_id);
+  const offerMap = Object.fromEntries(offers.map(o => [o.code.toUpperCase(), o]));
+  const seatsLeft = ev.seats_remaining ?? ev.seats_available;
 
   root.innerHTML = `
     <div class="booking-wrap">
@@ -55,19 +66,24 @@
         <div id="successBanner" class="success-banner hidden">
           <h3>Booking confirmed</h3>
           <p>Reference: <span id="bookingId" class="code"></span></p>
-          <p>A confirmation has been sent to your registered email.</p>
+          <p id="successAmount"></p>
+          <p style="font-size:12px; color: var(--text-muted); margin-top: 8px;">
+            Persisted to the <code>Booking</code> and <code>Transaction</code> tables via <code>sp_book_event</code>.
+          </p>
         </div>
+
+        <div id="errorBanner" class="notice warn hidden" style="margin-top: 14px;"></div>
       </section>
 
       <aside class="panel">
         <h2>Order summary</h2>
         <div style="margin-bottom: 18px;">
-          <div style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">${ev.title}</div>
+          <div style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">${escapeHtml(ev.title)}</div>
           <div style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">
-            ${formatDate(ev.date)} - ${formatTime(ev.start_time)}
+            ${formatDate(ev.event_date)} - ${formatTime(ev.start_time)}
           </div>
           <div style="color: var(--text-muted); font-size: 13px; margin-top: 2px;">
-            ${loc.venue}, ${loc.city}
+            ${escapeHtml(ev.venue_name)}, ${escapeHtml(ev.city)}
           </div>
         </div>
 
@@ -81,42 +97,47 @@
   `;
 
   const state = {
-    people: 2,
+    people: Math.min(2, seatsLeft),
     offerCode: null,
-    offerResult: null
+    offer: null,
   };
 
-  const peopleEl = document.getElementById("peopleCount");
-  const sumTickets = document.getElementById("sumTickets");
-  const sumSub = document.getElementById("sumSub");
-  const sumTotal = document.getElementById("sumTotal");
-  const discountRow = document.getElementById("discountRow");
+  const peopleEl      = document.getElementById("peopleCount");
+  const sumTickets    = document.getElementById("sumTickets");
+  const sumSub        = document.getElementById("sumSub");
+  const sumTotal      = document.getElementById("sumTotal");
+  const discountRow   = document.getElementById("discountRow");
   const discountLabel = document.getElementById("discountLabel");
-  const sumDiscount = document.getElementById("sumDiscount");
-  const offerMsg = document.getElementById("offerMsg");
+  const sumDiscount   = document.getElementById("sumDiscount");
+  const offerMsg      = document.getElementById("offerMsg");
+  const errorBanner   = document.getElementById("errorBanner");
+
+  function computeDiscount(subtotal, offer) {
+    if (!offer) return 0;
+    if (offer.type === "percentage") return Math.round((subtotal * Number(offer.discount_value)) / 100 * 100) / 100;
+    return Number(offer.discount_value);
+  }
 
   function refresh() {
-    const subtotal = ev.price * state.people;
+    const subtotal = Number(ev.price) * state.people;
     peopleEl.textContent = state.people;
     sumTickets.textContent = state.people;
     sumSub.textContent = formatRupees(subtotal);
 
-    let total = subtotal;
-    if (state.offerResult && state.offerResult.valid) {
+    if (state.offer) {
+      const discount = Math.min(subtotal, computeDiscount(subtotal, state.offer));
       discountRow.classList.remove("hidden");
-      const res = applyOffer(subtotal, state.offerCode);
-      state.offerResult = res;
-      discountLabel.textContent = `Discount (${res.offer.code})`;
-      sumDiscount.textContent = "-" + formatRupees(res.discount);
-      total = res.final;
+      discountLabel.textContent = `Discount (${state.offer.code})`;
+      sumDiscount.textContent = "-" + formatRupees(discount);
+      sumTotal.textContent = formatRupees(Math.max(0, subtotal - discount));
     } else {
       discountRow.classList.add("hidden");
+      sumTotal.textContent = formatRupees(subtotal);
     }
-    sumTotal.textContent = formatRupees(total);
   }
 
   document.getElementById("plusBtn").addEventListener("click", () => {
-    if (state.people < Math.min(10, ev.seats_available)) state.people++;
+    if (state.people < Math.min(10, seatsLeft)) state.people++;
     refresh();
   });
   document.getElementById("minusBtn").addEventListener("click", () => {
@@ -125,32 +146,51 @@
   });
 
   document.getElementById("applyBtn").addEventListener("click", () => {
-    const code = document.getElementById("offerInput").value.trim();
-    if (!code) return;
-    const subtotal = ev.price * state.people;
-    const res = applyOffer(subtotal, code);
+    const code = document.getElementById("offerInput").value.trim().toUpperCase();
     offerMsg.style.display = "block";
-    if (res.valid) {
+    if (!code) return;
+    const offer = offerMap[code];
+    if (offer) {
       state.offerCode = code;
-      state.offerResult = res;
+      state.offer = offer;
       offerMsg.className = "notice ok";
-      offerMsg.textContent = `${res.offer.code} applied - you save ${formatRupees(res.discount)}`;
+      const subtotal = Number(ev.price) * state.people;
+      const discount = computeDiscount(subtotal, offer);
+      offerMsg.textContent = `${offer.code} applied - you save ${formatRupees(Math.min(subtotal, discount))}`;
     } else {
       state.offerCode = null;
-      state.offerResult = null;
+      state.offer = null;
       offerMsg.className = "notice warn";
       offerMsg.textContent = "That code isn't valid or is expired.";
     }
     refresh();
   });
 
-  document.getElementById("confirmBtn").addEventListener("click", () => {
-    const fakeId = "ZD" + String(Math.floor(Math.random() * 9000 + 1000));
-    document.getElementById("bookingId").textContent = fakeId;
-    document.getElementById("successBanner").classList.remove("hidden");
-    document.getElementById("confirmBtn").disabled = true;
-    document.getElementById("confirmBtn").textContent = "Booking confirmed";
-    document.getElementById("confirmBtn").style.opacity = "0.6";
+  document.getElementById("confirmBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("confirmBtn");
+    btn.disabled = true;
+    btn.textContent = "Booking...";
+    errorBanner.classList.add("hidden");
+    try {
+      const result = await API.post("/api/bookings", {
+        event_id: Number(id),
+        num_people: state.people,
+        payment_method: document.getElementById("paymentSelect").value,
+        offer_code: state.offerCode,
+      });
+      document.getElementById("bookingId").textContent = "ZD" + String(result.booking_id).padStart(4, "0");
+      document.getElementById("successAmount").textContent =
+        `Charged ${formatRupees(result.amount_charged)} via ${result.payment_method}` +
+        (result.discount > 0 ? ` (saved ${formatRupees(result.discount)})` : "");
+      document.getElementById("successBanner").classList.remove("hidden");
+      btn.textContent = "Booking confirmed";
+      btn.style.opacity = "0.6";
+    } catch (err) {
+      errorBanner.textContent = "Booking failed: " + err.message;
+      errorBanner.classList.remove("hidden");
+      btn.disabled = false;
+      btn.textContent = "Confirm booking";
+    }
   });
 
   refresh();

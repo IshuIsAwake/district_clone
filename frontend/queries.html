@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Queries - Zomato District</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="logo">
+      <div class="logo-mark">Z</div>
+      <div>Zomato <span class="logo-sub">District</span></div>
+    </a>
+    <nav class="site-nav">
+      <a href="index.html">Discover</a>
+      <a href="queries.html">Queries</a>
+      <a href="#">Saved</a>
+      <a href="#">Account</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="queries-hero">
+    <h1>SQL <span class="accent">playground.</span></h1>
+    <p>
+      Run read-only queries against the live <code>zomato_district</code> database.
+      Click a preset on the left, or type your own. Anything that isn't a
+      <code>SELECT</code>/<code>SHOW</code>/<code>DESCRIBE</code>/<code>EXPLAIN</code>/<code>WITH</code>
+      is rejected, and every query runs inside a <code>READ ONLY</code> transaction.
+    </p>
+  </section>
+
+  <div class="queries-wrap">
+    <aside class="preset-panel">
+      <h2>Presets</h2>
+      <div id="presetList" class="preset-list">
+        <div class="preset-loading">Loading presets...</div>
+      </div>
+    </aside>
+
+    <section class="editor-panel">
+      <label class="panel-label" for="sqlEditor">SQL</label>
+      <textarea id="sqlEditor" class="sql-editor" spellcheck="false"
+        placeholder="SELECT * FROM Event ORDER BY event_date;"></textarea>
+
+      <div class="editor-actions">
+        <button id="runBtn" class="btn btn-primary">Run query</button>
+        <button id="clearBtn" class="btn btn-ghost">Clear</button>
+        <span id="statusLine" class="status-line"></span>
+      </div>
+
+      <div id="errorBox" class="notice warn hidden" style="margin-top: 14px;"></div>
+
+      <div class="results-wrap">
+        <h2>Results</h2>
+        <div id="resultsRoot" class="results-root">
+          <div class="results-empty">Run a query to see results here.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">Zomato District demo - DBMS lab project</div>
+</footer>
+
+<script src="js/utils.js"></script>
+<script src="js/queries.js"></script>
+</body>
+</html>

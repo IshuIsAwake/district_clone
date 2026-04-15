@@ -1,92 +1,101 @@
-(function () {
-  const grid     = document.getElementById("eventGrid");
-  const empty    = document.getElementById("emptyState");
-  const countEl  = document.getElementById("eventCount");
-  const search   = document.getElementById("searchBox");
-  const catSel   = document.getElementById("categoryFilter");
-  const citySel  = document.getElementById("cityFilter");
+(async function () {
+  const grid    = document.getElementById("eventGrid");
+  const empty   = document.getElementById("emptyState");
+  const countEl = document.getElementById("eventCount");
+  const search  = document.getElementById("searchBox");
+  const catSel  = document.getElementById("categoryFilter");
+  const citySel = document.getElementById("cityFilter");
 
-  CATEGORIES.forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c.id;
-    opt.textContent = c.name;
-    catSel.appendChild(opt);
-  });
-
-  const cities = [...new Set(LOCATIONS.map(l => l.city))].sort();
-  cities.forEach(city => {
-    const opt = document.createElement("option");
-    opt.value = city;
-    opt.textContent = city;
-    citySel.appendChild(opt);
-  });
-
-  function matchesFilters(ev) {
-    if (catSel.value && String(ev.category_id) !== catSel.value) return false;
-    const loc = findLocation(ev.location_id);
-    if (citySel.value && loc.city !== citySel.value) return false;
-    const q = search.value.trim().toLowerCase();
-    if (q) {
-      const hay = [
-        ev.title,
-        ev.description,
-        loc.venue,
-        loc.city,
-        ...ev.performer_ids.map(id => findPerformer(id)?.name || "")
-      ].join(" ").toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    return true;
-  }
-
-  function render() {
-    const upcoming = EVENTS.filter(e => isUpcoming(e.date)).filter(matchesFilters);
-    grid.innerHTML = "";
-    empty.classList.toggle("hidden", upcoming.length > 0);
-    countEl.textContent = upcoming.length ? `(${upcoming.length})` : "";
-
-    upcoming
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .forEach(ev => grid.appendChild(card(ev)));
-  }
+  let allEvents = [];
+  let debounceTimer = null;
 
   function card(ev) {
-    const cat = findCategory(ev.category_id);
-    const loc = findLocation(ev.location_id);
-    const seatsLow = ev.seats_available < 100;
+    const seatsLow = (ev.seats_remaining ?? ev.seats_available) < 100;
+    const seatsLeft = ev.seats_remaining ?? ev.seats_available;
 
     const el = document.createElement("article");
     el.className = "event-card";
-    el.addEventListener("click", () => { window.location.href = `event.html?id=${ev.id}`; });
+    el.addEventListener("click", () => {
+      window.location.href = `event.html?id=${ev.event_id}`;
+    });
 
     el.innerHTML = `
       <div class="cover">
-        ${cat.name}
-        <span class="cat-badge">${cat.name}</span>
+        ${escapeHtml(ev.category_name)}
+        <span class="cat-badge">${escapeHtml(ev.category_name)}</span>
         ${ev.age_limit > 0 ? `<span class="age-badge">${ev.age_limit}+</span>` : ""}
       </div>
       <div class="body">
-        <h3>${ev.title}</h3>
+        <h3>${escapeHtml(ev.title)}</h3>
         <div class="meta">
-          <span>${formatDate(ev.date)}</span>
+          <span>${formatDate(ev.event_date)}</span>
           <span class="dot">&middot;</span>
           <span>${formatTime(ev.start_time)}</span>
         </div>
         <div class="meta">
-          <span>${loc.venue}, ${loc.city}</span>
+          <span>${escapeHtml(ev.venue_name)}, ${escapeHtml(ev.city)}</span>
         </div>
         <div class="foot">
           <div class="price">${formatRupees(ev.price)} <span class="from">onwards</span></div>
-          <div class="seats ${seatsLow ? "low" : ""}">${ev.seats_available} seats left</div>
+          <div class="seats ${seatsLow ? "low" : ""}">${seatsLeft} seats left</div>
         </div>
       </div>
     `;
     return el;
   }
 
-  search.addEventListener("input", render);
-  catSel.addEventListener("change", render);
-  citySel.addEventListener("change", render);
+  function render() {
+    grid.innerHTML = "";
+    empty.classList.toggle("hidden", allEvents.length > 0);
+    countEl.textContent = allEvents.length ? `(${allEvents.length})` : "";
+    allEvents.forEach(ev => grid.appendChild(card(ev)));
+  }
 
-  render();
+  async function loadEvents() {
+    const params = new URLSearchParams();
+    if (catSel.value)  params.set("category", catSel.value);
+    if (citySel.value) params.set("city", citySel.value);
+    if (search.value.trim()) params.set("q", search.value.trim());
+    try {
+      allEvents = await API.get(`/api/events?${params.toString()}`);
+      render();
+    } catch (err) {
+      grid.innerHTML = "";
+      empty.classList.remove("hidden");
+      empty.textContent = "Could not load events: " + err.message;
+    }
+  }
+
+  async function loadFilters() {
+    try {
+      const [cats, cities] = await Promise.all([
+        API.get("/api/categories"),
+        API.get("/api/cities"),
+      ]);
+      cats.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.category_id;
+        opt.textContent = c.category_name;
+        catSel.appendChild(opt);
+      });
+      cities.forEach(city => {
+        const opt = document.createElement("option");
+        opt.value = city;
+        opt.textContent = city;
+        citySel.appendChild(opt);
+      });
+    } catch (err) {
+      console.error("filter load failed", err);
+    }
+  }
+
+  search.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(loadEvents, 200);
+  });
+  catSel.addEventListener("change", loadEvents);
+  citySel.addEventListener("change", loadEvents);
+
+  await loadFilters();
+  await loadEvents();
 })();
