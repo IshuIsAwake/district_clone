@@ -373,6 +373,60 @@ def run_query():
         return db_error(e)
 
 
+# ---------- admin (unrestricted SQL) -----------------------------------------
+
+@app.route("/api/admin/query", methods=["POST"])
+def run_admin_query():
+    payload = request.get_json(silent=True) or {}
+    sql = (payload.get("sql") or "").strip().rstrip(";").strip()
+    if not sql:
+        return jsonify({"error": "Query is empty."}), 400
+
+    conn = None
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        start = time.perf_counter()
+        cur.execute(sql)
+        elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
+
+        if cur.description:
+            columns = [c[0] for c in cur.description]
+            rows = cur.fetchall()
+            data = rows_to_json(columns, rows)
+            conn.commit()
+            cur.close(); conn.close()
+            return jsonify(
+                {
+                    "columns": columns,
+                    "rows": data,
+                    "row_count": len(data),
+                    "affected_rows": None,
+                    "elapsed_ms": elapsed_ms,
+                }
+            )
+
+        affected = cur.rowcount
+        conn.commit()
+        cur.close(); conn.close()
+        return jsonify(
+            {
+                "columns": [],
+                "rows": [],
+                "row_count": 0,
+                "affected_rows": affected,
+                "elapsed_ms": elapsed_ms,
+            }
+        )
+    except mysql.connector.Error as e:
+        if conn:
+            try: conn.rollback()
+            except Exception: pass
+            try: conn.close()
+            except Exception: pass
+        return db_error(e)
+
+
 # ---------- main -------------------------------------------------------------
 
 if __name__ == "__main__":
