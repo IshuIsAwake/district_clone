@@ -10,4 +10,3 @@ __pycache__/
 venv/
 .venv/
 node_modules/
-report/report.docx
