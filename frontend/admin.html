@@ -1,73 +1,89 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Admin - Zomato District</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Elysium</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
-
-<header class="site-header">
-  <div class="container">
-    <a href="index.html" class="logo">
-      <div class="logo-mark">Z</div>
-      <div>Zomato <span class="logo-sub">District</span></div>
-    </a>
-    <nav class="site-nav">
-      <a href="index.html">Discover</a>
-      <a href="queries.html">Queries</a>
-      <a href="admin.html">Admin</a>
-      <a href="#">Saved</a>
-      <a href="#">Account</a>
-      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-        <svg id="theme-toggle-dark-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-        <svg id="theme-toggle-light-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-      </button>
-    </nav>
+  <div id="preloader">
+    <div class="loader-logo">ELYSIUM</div>
   </div>
-</header>
 
-<main class="container">
-  <section class="queries-hero">
-    <h1>Admin <span class="accent">console.</span></h1>
-    <p>
-      Run <strong>any</strong> SQL statement against the live <code>zomato_district</code> database -
-      including <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, and DDL.
-      Writes are committed immediately. Use with care.
-    </p>
-  </section>
 
-  <div class="queries-wrap">
-    <section class="editor-panel" style="grid-column: 1 / -1;">
-      <label class="panel-label" for="sqlEditor">SQL</label>
-      <textarea id="sqlEditor" class="sql-editor" spellcheck="false"
-        placeholder="UPDATE Event SET seats_available = 200 WHERE event_id = 1;"></textarea>
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">E</div>
+        <div>Elysium</div>
+      </a>
+      <nav class="site-nav">
+        <a href="index.html">Discover</a>
+        <a href="presets.html">Presets</a>
+        <a href="queries.html">Queries</a>
+        <a href="admin.html">Admin</a>
+        <a href="#">Saved</a>
+        <a href="#">Account</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+          <svg id="theme-toggle-dark-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+          </svg>
+          <svg id="theme-toggle-light-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor">
+            <path
+              d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+              fill-rule="evenodd" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </nav>
+    </div>
+  </header>
 
-      <div class="editor-actions">
-        <button id="runBtn" class="btn btn-primary">Run query</button>
-        <button id="clearBtn" class="btn btn-ghost">Clear</button>
-        <span id="statusLine" class="status-line"></span>
-      </div>
-
-      <div id="errorBox" class="notice warn hidden" style="margin-top: 14px;"></div>
-
-      <div class="results-wrap">
-        <h2>Results</h2>
-        <div id="resultsRoot" class="results-root">
-          <div class="results-empty">Run a query to see results here.</div>
-        </div>
-      </div>
+  <main class="container">
+    <section class="queries-hero">
+      <h1>Admin <span class="accent">console.</span></h1>
+      <p>
+        Run <strong>any</strong> SQL statement against the live <code>elysium</code> database -
+        including <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, and DDL.
+        Writes are committed immediately. Use with care.
+      </p>
     </section>
-  </div>
-</main>
 
-<footer class="site-footer">
-  <div class="container">Zomato District demo - DBMS lab project</div>
-</footer>
+    <div class="queries-wrap">
+      <section class="editor-panel" style="grid-column: 1 / -1;">
+        <label class="panel-label" for="sqlEditor">SQL</label>
+        <textarea id="sqlEditor" class="sql-editor" spellcheck="false"
+          placeholder="UPDATE Event SET seats_available = 200 WHERE event_id = 1;"></textarea>
 
-<script src="js/utils.js"></script>
-<script src="js/admin.js"></script>
+        <div class="editor-actions">
+          <button id="runBtn" class="btn btn-primary">Run query</button>
+          <button id="clearBtn" class="btn btn-ghost">Clear</button>
+          <span id="statusLine" class="status-line"></span>
+        </div>
+
+        <div id="errorBox" class="notice warn hidden" style="margin-top: 14px;"></div>
+
+        <div class="results-wrap">
+          <h2>Results</h2>
+          <div id="resultsRoot" class="results-root">
+            <div class="results-empty">Run a query to see results here.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">Elysium demo - DBMS lab project</div>
+  </footer>
+
+  <script src="js/utils.js"></script>
+  <script src="js/admin.js"></script>
 </body>
+
 </html>

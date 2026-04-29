@@ -60,6 +60,14 @@ function escapeHtml(str) {
 
 // Theme toggle logic
 window.addEventListener('DOMContentLoaded', () => {
+  // Preloader
+  const preloader = document.getElementById('preloader');
+  if (preloader) {
+    setTimeout(() => {
+      preloader.classList.add('fade-out');
+    }, 2000);
+  }
+
   const themeToggle = document.getElementById('theme-toggle');
   const darkIcon = document.getElementById('theme-toggle-dark-icon');
   const lightIcon = document.getElementById('theme-toggle-light-icon');

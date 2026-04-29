@@ -1,63 +1,78 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Zomato District - discover events near you</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Elysium - find your version of paradise</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
+  <div id="preloader">
+    <div class="loader-logo">ELYSIUM</div>
+  </div>
 
-<header class="site-header">
-  <div class="container">
-    <div class="logo">
-      <div class="logo-mark">Z</div>
-      <div>
-        Zomato <span class="logo-sub">District</span>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">E</div>
+        <div>Elysium</div>
+      </a>
+      <nav class="site-nav">
+        <a href="index.html">Discover</a>
+        <a href="presets.html">Presets</a>
+        <a href="queries.html">Queries</a>
+        <a href="admin.html">Admin</a>
+        <a href="#">Saved</a>
+        <a href="#">Account</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+          <svg id="theme-toggle-dark-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+          </svg>
+          <svg id="theme-toggle-light-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor">
+            <path
+              d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+              fill-rule="evenodd" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Find your version of <span class="accent">paradise.</span></h1>
+      <p>Discover concerts, comedy, and food festivals curated for your perfect night out.</p>
+
+      <div class="filters">
+        <input type="text" id="searchBox" class="search-box" placeholder="Search events, artists, venues..." />
+        <select id="categoryFilter">
+          <option value="">All categories</option>
+        </select>
+        <select id="cityFilter">
+          <option value="">All cities</option>
+        </select>
       </div>
+    </section>
+
+    <h2 class="section-title">Upcoming events <span class="count" id="eventCount"></span></h2>
+    <div id="eventGrid" class="event-grid"></div>
+    <div id="emptyState" class="empty-state hidden">No events match your filters. Try clearing them.</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      Elysium demo - built for DBMS lab project - not a real booking service
     </div>
-      <a href="index.html">Discover</a>
-      <a href="queries.html">Queries</a>
-      <a href="admin.html">Admin</a>
-      <a href="#">Saved</a>
-      <a href="#">Account</a>
-      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-        <svg id="theme-toggle-dark-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-        <svg id="theme-toggle-light-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-      </button>
-    </nav>
-  </div>
-</header>
+  </footer>
 
-<main class="container">
-  <section class="hero">
-    <h1>Nights out, <span class="accent">done right.</span></h1>
-    <p>Concerts, comedy, DJ nights and food festivals - curated for your city. Filter, book and turn up.</p>
-
-    <div class="filters">
-      <input type="text" id="searchBox" class="search-box" placeholder="Search events, artists, venues..." />
-      <select id="categoryFilter">
-        <option value="">All categories</option>
-      </select>
-      <select id="cityFilter">
-        <option value="">All cities</option>
-      </select>
-    </div>
-  </section>
-
-  <h2 class="section-title">Upcoming events <span class="count" id="eventCount"></span></h2>
-  <div id="eventGrid" class="event-grid"></div>
-  <div id="emptyState" class="empty-state hidden">No events match your filters. Try clearing them.</div>
-</main>
-
-<footer class="site-footer">
-  <div class="container">
-    Zomato District demo - built for DBMS lab project - not a real booking service
-  </div>
-</footer>
-
-<script src="js/utils.js"></script>
-<script src="js/home.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/home.js"></script>
 </body>
+
 </html>
