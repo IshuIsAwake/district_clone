@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schema - Elysium</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div id="preloader">
+    <div class="loader-logo">ELYSIUM</div>
+  </div>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">E</div>
+        <div>Elysium</div>
+      </a>
+      <nav class="site-nav">
+        <a href="index.html">Discover</a>
+        <a href="presets.html">Presets</a>
+        <a href="queries.html">Queries</a>
+        <a href="schema.html">Schema</a>
+        <a href="admin.html">Admin</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+          <svg id="theme-toggle-dark-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+          </svg>
+          <svg id="theme-toggle-light-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="schema-hero">
+      <h1>Schema, <span class="accent">decisions, trade-offs.</span></h1>
+      <p>
+        13 tables in 3NF. Every split, every constraint, every index here is justified by either
+        a normalization rule or a measured query path - no decoration.
+        Read this page as "<em>why this shape and not another</em>".
+      </p>
+    </section>
+
+    <!-- ============================== overview =============================== -->
+    <section class="schema-section">
+      <div class="schema-section-title">
+        <span class="section-num">01</span>
+        <h2>Why 13 tables and not 4-5 fat ones</h2>
+      </div>
+      <p class="schema-lede">
+        Each split below is justified by a specific normalization rule. Collapsing any of them would either violate
+        1NF (repeating groups), 2NF (partial dependency on a composite key) or 3NF (transitive dependency through a
+        non-key attribute). The price we pay is JOINs at read time; the price we'd otherwise pay is update anomalies
+        and storage redundancy.
+      </p>
+
+      <div class="layer-grid">
+        <div class="layer-card">
+          <div class="layer-tag">Layer 1</div>
+          <h3>Independent entities</h3>
+          <p class="layer-desc">No outgoing FKs. The "things in the world" the system models.</p>
+          <ul class="table-list">
+            <li><span class="tbl-name">User</span><span class="tbl-meta">PK: user_id, candidate: email</span></li>
+            <li><span class="tbl-name">Event_Category</span><span class="tbl-meta">PK: category_id, candidate: category_name</span></li>
+            <li><span class="tbl-name">Location</span><span class="tbl-meta">PK: location_id</span></li>
+            <li><span class="tbl-name">Host</span><span class="tbl-meta">PK: host_id, candidate: contact_email</span></li>
+            <li><span class="tbl-name">Performer</span><span class="tbl-meta">PK: performer_id</span></li>
+            <li><span class="tbl-name">Offer</span><span class="tbl-meta">PK: offer_id, candidate: code</span></li>
+          </ul>
+        </div>
+
+        <div class="layer-card">
+          <div class="layer-tag">Layer 2</div>
+          <h3>Dependent entities</h3>
+          <p class="layer-desc">Hold the business core. FKs into Layer 1.</p>
+          <ul class="table-list">
+            <li><span class="tbl-name">Event</span><span class="tbl-meta">FK to Category, Location, Host</span></li>
+            <li><span class="tbl-name">Booking</span><span class="tbl-meta">FK to User, Event</span></li>
+            <li><span class="tbl-name">Transaction</span><span class="tbl-meta">FK to Booking (UNIQUE = 1:1)</span></li>
+            <li><span class="tbl-name">Review</span><span class="tbl-meta">FK to User, Event; UNIQUE(user_id,event_id)</span></li>
+          </ul>
+        </div>
+
+        <div class="layer-card">
+          <div class="layer-tag">Layer 3</div>
+          <h3>Bridge tables (M:N)</h3>
+          <p class="layer-desc">Composite PK on the two FK columns. 2NF/3NF by construction.</p>
+          <ul class="table-list">
+            <li><span class="tbl-name">Saved_Item</span><span class="tbl-meta">User &times; Event</span></li>
+            <li><span class="tbl-name">Event_Performer</span><span class="tbl-meta">Event &times; Performer</span></li>
+            <li><span class="tbl-name">Booking_Offer</span><span class="tbl-meta">Booking &times; Offer</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== normalization ========================== -->
+    <section class="schema-section">
+      <div class="schema-section-title">
+        <span class="section-num">02</span>
+        <h2>Normalization, with worked examples</h2>
+      </div>
+      <p class="schema-lede">
+        Three concrete cases. Each shows the de-normalized shape, what would have gone wrong, and the fix.
+      </p>
+
+      <div class="norm-example">
+        <div class="norm-tag">1NF</div>
+        <h3>Performer on Event &mdash; the repeating-group trap</h3>
+        <div class="norm-grid">
+          <div class="norm-bad">
+            <div class="norm-label">Naive shape</div>
+            <pre>Event(event_id, title, ..., performer_csv VARCHAR(500))
+-- or worse:
+Event(event_id, title, ..., performer_1, performer_2, performer_3)</pre>
+            <p class="norm-cost">CSV violates 1NF (atomicity). The numbered columns also violate 1NF (repeating group) <em>and</em> force an arbitrary cap on lineup size.</p>
+          </div>
+          <div class="norm-good">
+            <div class="norm-label">3NF fix</div>
+            <pre>Performer(performer_id, name, performer_type)
+
+Event_Performer(event_id, performer_id, performance_order)
+PRIMARY KEY (event_id, performer_id)</pre>
+            <p class="norm-cost">Bridge table. Unbounded lineup, queryable by performer (find every event a performer has done), one canonical performer record.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="norm-example">
+        <div class="norm-tag">3NF</div>
+        <h3>Venue address on Event &mdash; the transitive-dependency trap</h3>
+        <div class="norm-grid">
+          <div class="norm-bad">
+            <div class="norm-label">Naive shape</div>
+            <pre>Event(event_id, title, venue_name, city,
+      state, locality, pin_code,
+      max_event_capacity, ...)</pre>
+            <p class="norm-cost">venue_name &rarr; (city, state, pin_code, capacity). Two events at the same venue duplicate every address attribute. Fixing a typo means an UPDATE across N events.</p>
+          </div>
+          <div class="norm-good">
+            <div class="norm-label">3NF fix</div>
+            <pre>Location(location_id, venue_name, city,
+         state, locality, pin_code,
+         max_event_capacity)
+
+Event(event_id, title, ..., location_id INT)
+FOREIGN KEY (location_id) REFERENCES Location(location_id)</pre>
+            <p class="norm-cost">Address attributes depend only on location_id. One venue, one row. Pay one JOIN, gain one source of truth.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="norm-example">
+        <div class="norm-tag">3NF</div>
+        <h3>Offer details on Booking &mdash; the same trap, again</h3>
+        <div class="norm-grid">
+          <div class="norm-bad">
+            <div class="norm-label">Naive shape</div>
+            <pre>Booking(booking_id, ..., offer_code,
+        offer_type, offer_value)</pre>
+            <p class="norm-cost">offer_code &rarr; (offer_type, offer_value). Editing a campaign means rewriting every booking that used it &mdash; corrupts historical receipts.</p>
+          </div>
+          <div class="norm-good">
+            <div class="norm-label">3NF fix</div>
+            <pre>Offer(offer_id, code, type, discount_value, ...)
+
+Booking_Offer(booking_id, offer_id,
+              discount_applied DECIMAL)
+PRIMARY KEY (booking_id, offer_id)</pre>
+            <p class="norm-cost">Offer terms in one table. discount_applied is the rupees actually deducted at redemption time &mdash; deliberately frozen, so historical bookings stay correct even if the offer changes.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== honest denormalizations ================= -->
+    <section class="schema-section">
+      <div class="schema-section-title">
+        <span class="section-num">03</span>
+        <h2>Honest denormalizations</h2>
+      </div>
+      <p class="schema-lede">
+        Two places we deliberately did <em>not</em> normalize. Calling them out so they're not mistaken for oversights.
+      </p>
+
+      <div class="denorm-list">
+        <div class="denorm-card">
+          <h3><code>User.city</code> &amp; <code>User.occupation</code></h3>
+          <p>Could be FKs to <code>City</code> / <code>Occupation</code> lookup tables. We left them as <code>VARCHAR</code>. The lookup tables would have one column each (just the name) and give us nothing back except an extra JOIN. Strict 3NF still holds because both attributes depend only on user_id.</p>
+        </div>
+        <div class="denorm-card">
+          <h3><code>Booking.total_price</code></h3>
+          <p>Computable from <code>Event.price &times; number_of_people - discount</code>, so arguably a transitive dependency. Stored anyway because it locks in the price <em>at booking time</em> &mdash; if the event price changes later, the booking still reflects what the user paid. Refunds and audits need the as-charged amount, not the current one. Documented denormalization for auditability.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== keys =================================== -->
+    <section class="schema-section">
+      <div class="schema-section-title">
+        <span class="section-num">04</span>
+        <h2>Keys at a glance</h2>
+      </div>
+
+      <div class="keys-table">
+        <table class="results-table">
+          <thead>
+            <tr><th>Kind</th><th>Definition</th><th>Where in our schema</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Primary key</td>
+              <td>Uniquely identifies a row, NOT NULL.</td>
+              <td>Every table - <code>&lt;table&gt;_id INT AUTO_INCREMENT</code> for entities, composite (FK1, FK2) for bridges.</td>
+            </tr>
+            <tr>
+              <td>Foreign key</td>
+              <td>References a PK in another table; enforces referential integrity.</td>
+              <td>Event &rarr; Category/Location/Host; Booking &rarr; User/Event; Review &rarr; User/Event; all bridges.</td>
+            </tr>
+            <tr>
+              <td>Candidate key</td>
+              <td>Could have been the PK. Enforced with <code>UNIQUE</code>.</td>
+              <td><code>User.email</code>, <code>Event_Category.category_name</code>, <code>Host.contact_email</code>, <code>Offer.code</code>.</td>
+            </tr>
+            <tr>
+              <td>Composite key</td>
+              <td>PK formed by two or more columns.</td>
+              <td>All three bridge tables: <code>(user_id, event_id)</code>, <code>(event_id, performer_id)</code>, <code>(booking_id, offer_id)</code>.</td>
+            </tr>
+            <tr>
+              <td>Composite UNIQUE</td>
+              <td>Business rule expressed at the schema level.</td>
+              <td><code>Review UNIQUE (user_id, event_id)</code> &mdash; one review per user per event.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================== indexes ================================ -->
+    <section class="schema-section">
+      <div class="schema-section-title">
+        <span class="section-num">05</span>
+        <h2>Indexes &mdash; one per hot read path</h2>
+      </div>
+      <p class="schema-lede">
+        InnoDB indexes every PK and UNIQUE column for free. The six explicit indexes below each pay for one specific
+        query that runs in the live application. Ablation #2 shows the <code>EXPLAIN</code> before/after.
+      </p>
+
+      <div class="keys-table">
+        <table class="results-table">
+          <thead>
+            <tr><th>Index</th><th>Pays for</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>idx_event_date</code></td><td>Discover page filter <code>WHERE event_date &gt;= CURRENT_DATE</code> &mdash; turns a full table scan into a range scan.</td></tr>
+            <tr><td><code>idx_event_category</code></td><td>Category-filter dropdown on Discover.</td></tr>
+            <tr><td><code>idx_location_city</code></td><td>City-filter dropdown on Discover.</td></tr>
+            <tr><td><code>idx_booking_user</code></td><td>"My bookings" lookup by user.</td></tr>
+            <tr><td><code>idx_booking_event</code></td><td><code>fn_seats_remaining</code> aggregates <code>Booking</code> by <code>event_id</code>; this turns the SUM into an index range scan.</td></tr>
+            <tr><td><code>idx_review_event</code></td><td><code>vw_event_dashboard</code>'s <code>AVG(rating)</code> aggregation groups <code>Review</code> by <code>event_id</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================== pointer to ablations =================== -->
+    <section class="schema-section">
+      <div class="schema-section-title">
+        <span class="section-num">06</span>
+        <h2>See the trade-offs live</h2>
+      </div>
+      <p class="schema-lede">
+        Every choice on this page is replayed empirically in the
+        <a href="queries.html" class="schema-link">Queries</a> tab &mdash; basic, intermediate, and advanced
+        implementations of the same problem, side-by-side, with timings and observed failures.
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">Elysium - DBMS lab project</div>
+  </footer>
+
+  <script src="js/utils.js"></script>
+</body>
+
+</html>

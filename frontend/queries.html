@@ -10,7 +10,6 @@
 </head>
 
 <body>
-
   <div id="preloader">
     <div class="loader-logo">ELYSIUM</div>
   </div>
@@ -25,19 +24,14 @@
         <a href="index.html">Discover</a>
         <a href="presets.html">Presets</a>
         <a href="queries.html">Queries</a>
+        <a href="schema.html">Schema</a>
         <a href="admin.html">Admin</a>
-        <a href="#">Saved</a>
-        <a href="#">Account</a>
         <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-          <svg id="theme-toggle-dark-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"
-            fill="currentColor">
+          <svg id="theme-toggle-dark-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
           </svg>
-          <svg id="theme-toggle-light-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"
-            fill="currentColor">
-            <path
-              d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-              fill-rule="evenodd" clip-rule="evenodd"></path>
+          <svg id="theme-toggle-light-icon" class="hidden" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
           </svg>
         </button>
       </nav>
@@ -45,31 +39,26 @@
   </header>
 
   <main class="container">
-    <section class="queries-hero" style="text-align: left; padding: 60px 0;">
-      <h1 style="font-size: 48px;">Technique <span class="accent">Comparisons.</span></h1>
-      <p style="margin-top: 10px; max-width: 800px; margin-left: 0;">
-        A comprehensive breakdown of the query optimization techniques and comparisons handled in the Elysium
-        architecture. We explore how different indexing and schema designs impact read/write heavy workloads in our
-        paradise ecosystem.
+    <section class="schema-hero">
+      <h1>Same problem, <span class="accent">three ways.</span></h1>
+      <p>
+        Five A/B/C ablations &mdash; basic, intermediate, advanced &mdash; for the design choices we made.
+        Each one runs live against the database. Click a tier, see the SQL, run it, read the timing
+        and the EXPLAIN. The point is to <em>show</em> why our shape beats the obvious one, not assert it.
       </p>
     </section>
-    <div class="panel" style="margin-bottom: 80px;">
-      <h2>Comparisons & Techniques</h2>
-      <div style="color: var(--text-muted); font-size: 15px; margin-bottom: 20px;">
-        (Content describing your SQL performance measurements, technique differences, indexing benefits, will go here.)
-      </div>
-      <div
-        style="padding: 40px; text-align: center; border: 1px dashed var(--border-strong); border-radius: var(--radius-sm);">
-        Run benchmarks to populate these results.
-      </div>
+
+    <div id="ablationRoot" class="ablation-root">
+      <div class="ablation-loading">Loading ablations...</div>
     </div>
   </main>
 
   <footer class="site-footer">
-    <div class="container">Elysium demo - DBMS lab project</div>
+    <div class="container">Elysium - DBMS lab project</div>
   </footer>
 
   <script src="js/utils.js"></script>
+  <script src="js/queries.js"></script>
 </body>
 
 </html>
