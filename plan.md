@@ -36,27 +36,39 @@ zomato-district/
 │   ├── report.docx          (final report following Sample.doc template)
 │   └── screenshots/         (query outputs, ER diagram, frontend screenshots)
 ├── database/
-│   ├── schema.sql           (all CREATE TABLE statements, standalone)
+│   ├── schema.sql            (CREATE TABLEs + indexes, with normalization rationale)
 │   ├── seed_data.sql         (all INSERT statements, standalone)
-│   ├── queries.sql           (all SELECT queries with comments)
-│   ├── advanced.sql          (views, procedures, functions, TCL, DCL)
-│   └── run_all.py            (Python script that executes everything)
+│   ├── views.sql             (3 views, split out from old advanced.sql)
+│   ├── functions.sql         (2 UDFs: fn_seats_remaining, fn_apply_discount)
+│   ├── procedures.sql        (4 procedures with declared transaction policies:
+│   │                          sp_book_event, sp_apply_offer_to_booking,
+│   │                          sp_cancel_booking, sp_search_events)
+│   ├── queries.sql           (Q0–Q14 DQL showcase; blocks marked "-- @id <name>")
+│   ├── playground.sql        (preset-only blocks: tables, view demos, UDF demos, metadata)
+│   └── run_all.py            (Python orchestrator — runs schema → seed → views/funcs/procs → demos)
+├── backend/
+│   ├── app.py                (Flask: JSON API + serves frontend + SQL block loader)
+│   ├── presets.py            (thin manifest of preset queries; SQL itself in .sql files)
+│   ├── query_guard.py        (read-only validator for /api/query)
+│   └── requirements.txt
 ├── frontend/
-│   ├── index.html            (home — event listing + filters)
+│   ├── index.html            (Discover — event listing + filters)
 │   ├── event.html            (event detail page)
-│   ├── booking.html          (booking confirmation page)
-│   ├── css/
-│   │   └── style.css
-│   ├── js/
-│   │   ├── data.js           (hardcoded event data as JS arrays)
-│   │   ├── home.js           (filter/search/render logic for home)
-│   │   ├── event.js          (event detail page logic)
-│   │   └── booking.js        (booking page logic)
-│   └── assets/               (any images/icons)
+│   ├── booking.html          (booking flow)
+│   ├── queries.html          (SQL playground — presets + custom editor)
+│   ├── admin.html            (unrestricted SQL console)
+│   ├── css/style.css
+│   └── js/                   (per-page logic + shared utils)
+├── documents/                (rubric, locking handout, report template)
 └── diagrams/
     ├── ER_Diagram_DJ.drawio
     └── Class_Diagram_DJ.drawio
 ```
+
+> **Note:** `database/advanced.sql` was split into `views.sql`, `functions.sql`,
+> and `procedures.sql` to give the rubric more `.sql` files to grade and to
+> separate transaction-policy comments per object. The old monolithic file
+> no longer exists.
 
 ---
 
