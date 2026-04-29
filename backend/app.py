@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -12,7 +13,45 @@ from presets import PRESETS
 from query_guard import validate as validate_readonly
 
 ROOT = Path(__file__).resolve().parent.parent
+DB_DIR = ROOT / "database"
 load_dotenv(ROOT / ".env")
+
+
+# ---------- SQL block loader -------------------------------------------------
+# Each preset references a (file, id) pair. A block is delimited inside the
+# .sql file by a line of the form "-- @id <id>". The block runs from one
+# such line to the next "-- @id" line (or to EOF). The marker line itself
+# is stripped from the returned SQL so the playground shows clean code.
+
+_ID_RE = re.compile(r"^\s*--\s*@id\s+(\S+)\s*$")
+
+
+def _parse_blocks(text: str) -> dict[str, str]:
+    blocks: dict[str, str] = {}
+    current_id: str | None = None
+    current_lines: list[str] = []
+    for line in text.splitlines():
+        m = _ID_RE.match(line)
+        if m:
+            if current_id is not None:
+                blocks[current_id] = "\n".join(current_lines).strip()
+            current_id = m.group(1)
+            current_lines = []
+        elif current_id is not None:
+            current_lines.append(line)
+    if current_id is not None:
+        blocks[current_id] = "\n".join(current_lines).strip()
+    return blocks
+
+
+def load_block(source: str, block_id: str) -> str:
+    # Read on every call - files are small, this runs on localhost, and
+    # dev-mode edits to .sql files take effect without restart.
+    text = (DB_DIR / source).read_text()
+    blocks = _parse_blocks(text)
+    if block_id not in blocks:
+        raise KeyError(f"preset id '{block_id}' not found in {source}")
+    return blocks[block_id]
 
 DB_CONFIG = {
     "host":     os.getenv("DB_HOST", "localhost"),
@@ -255,10 +294,19 @@ def create_booking():
     offer_code = (payload.get("offer_code") or "").strip() or None
     user_id = int(payload.get("user_id") or DEMO_USER_ID)
 
+    # Transaction policy for /api/bookings:
+    #   Caller-managed (this handler) - sp_book_event acquires an X-lock
+    #   on the Event row via FOR UPDATE; that lock is held until the
+    #   COMMIT below, so the seat-check + Booking insert + Transaction
+    #   insert + offer application all happen atomically. Any error
+    #   between the START TRANSACTION and COMMIT triggers a ROLLBACK
+    #   that releases the lock and undoes every write.
     conn = None
     try:
         conn = get_conn()
         cur = conn.cursor()
+
+        cur.execute("START TRANSACTION")
 
         cur.callproc("sp_book_event", [user_id, event_id, num_people, payment_method])
         new_booking_id = None
@@ -271,40 +319,25 @@ def create_booking():
         if new_booking_id is None:
             raise RuntimeError("sp_book_event returned no booking id")
 
+        # Offer application is delegated to sp_apply_offer_to_booking, which
+        # uses fn_apply_discount internally. The procedure is caller-managed
+        # so it composes with the outer transaction we opened above. Bad or
+        # inactive offer codes are quietly passed through (final_amount =
+        # original amount, discount = 0); the procedure only SIGNALs for
+        # genuine bugs (missing booking_id). This is ablation #5 in action:
+        # one callproc instead of nine lines of duplicated discount math.
         discount = 0.0
         applied_code = None
         if offer_code:
-            cur.execute(
-                "SELECT offer_id, type, discount_value FROM Offer "
-                "WHERE code = %s AND is_active = TRUE",
-                (offer_code,),
-            )
-            offer_row = cur.fetchone()
-            if offer_row:
-                offer_id, otype, ovalue = offer_row
-                ovalue = float(ovalue)
-                if otype == "percentage":
-                    discount = round(amount_charged * ovalue / 100, 2)
-                else:
-                    discount = round(ovalue, 2)
-                final_amount = max(0.0, round(amount_charged - discount, 2))
-                cur.execute(
-                    "UPDATE Booking SET total_price = %s WHERE booking_id = %s",
-                    (final_amount, new_booking_id),
-                )
-                cur.execute(
-                    "UPDATE Transaction SET amount = %s WHERE booking_id = %s",
-                    (final_amount, new_booking_id),
-                )
-                cur.execute(
-                    "INSERT INTO Booking_Offer (booking_id, offer_id, discount_applied) "
-                    "VALUES (%s, %s, %s)",
-                    (new_booking_id, offer_id, discount),
-                )
-                amount_charged = final_amount
-                applied_code = offer_code
+            cur.callproc("sp_apply_offer_to_booking", [new_booking_id, offer_code])
+            for result in cur.stored_results():
+                row = result.fetchone()
+                if row:
+                    amount_charged = float(row[0])
+                    discount = float(row[1])
+                    applied_code = row[2]
 
-        conn.commit()
+        cur.execute("COMMIT")
         cur.close(); conn.close()
 
         return jsonify(
@@ -330,7 +363,18 @@ def create_booking():
 
 @app.route("/api/presets")
 def list_presets():
-    return jsonify(PRESETS)
+    # Resolve each manifest entry to {id, label, group, sql} by reading
+    # the referenced block from its .sql file. The SQL is stored exactly
+    # once on disk; this endpoint is the only place it is materialised
+    # for the frontend.
+    out = []
+    for p in PRESETS:
+        try:
+            sql = load_block(p["source"], p["id"])
+        except (KeyError, FileNotFoundError) as e:
+            sql = f"-- ERROR: {e}"
+        out.append({"id": p["id"], "label": p["label"], "group": p["group"], "sql": sql})
+    return jsonify(out)
 
 
 @app.route("/api/query", methods=["POST"])

@@ -1,4 +1,5 @@
 -- Zomato District clone - sample data
+-- Generated entirely by AI
 USE zomato_district;
 
 -- ------------------------------------------------------------
@@ -75,10 +76,10 @@ INSERT INTO Offer (code, type, discount_value, start_date, end_date, is_active) 
 
 -- ------------------------------------------------------------
 -- Event
--- seats_available here is the INITIAL stock for each event.
--- We intentionally do NOT decrement it for the seeded bookings so that
--- fn_seats_remaining() can demonstrate dynamic computation against the
--- stored "live" value - good viva talking point on stored vs. derived.
+-- seats_available is the INITIAL capacity for each event and is never
+-- mutated after seeding. Live remaining seats are derived from confirmed
+-- Booking rows by fn_seats_remaining() - the single source of truth for
+-- "how many seats are left right now".
 -- ------------------------------------------------------------
 INSERT INTO Event (title, event_date, start_time, duration, age_limit, seats_available, price, description, category_id, location_id, host_id) VALUES
 ('Prateek Kuhad Live',            '2026-05-10', '19:30:00', 120, 12,  450, 1999.00, 'An intimate evening of indie folk with chart-topping singer-songwriter Prateek Kuhad.', 1, 1, 1),

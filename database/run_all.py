@@ -4,7 +4,7 @@ run_all.py - orchestrates the full Zomato District DB demo.
 Connects to a local MySQL instance using credentials from .env, then:
     1. Creates the database + schema (schema.sql)
     2. Loads sample data (seed_data.sql)
-    3. Creates views / functions / procedures (advanced.sql)
+    3. Creates views / functions / procedures (views.sql, functions.sql, procedures.sql)
     4. Runs every query from queries.sql with a labelled header
     5. Demonstrates stored procedures, functions, transactions, DCL
 
@@ -68,17 +68,33 @@ def _strip_sql_comments(chunk):
 
 
 def run_script_simple(cursor, sql_text):
-    """Run a .sql file whose statements are separated by ';' (no procedures)."""
-    for raw in sql_text.split(";"):
-        stmt = _strip_sql_comments(raw)
+    """Run a .sql file whose statements are separated by ';' (no procedures).
+    Comments are stripped BEFORE splitting on ';' so that semicolons inside
+    prose comments do not split a statement in half."""
+    cleaned = _strip_sql_comments(sql_text)
+    for raw in cleaned.split(";"):
+        stmt = raw.strip()
         if stmt:
             cursor.execute(stmt)
 
 
 def run_script_split(cursor, sql_text, marker="-- ===SQL_SPLIT==="):
     """Run a .sql file whose statements are split by an explicit marker.
-    Required for CREATE PROCEDURE / FUNCTION bodies that contain ';'."""
-    for chunk in sql_text.split(marker):
+    Required for CREATE PROCEDURE / FUNCTION bodies that contain ';'.
+    Splits ONLY on lines whose stripped content equals the marker, so
+    comment text that happens to mention the marker is not treated as
+    a separator."""
+    chunks: list[str] = []
+    current: list[str] = []
+    for line in sql_text.splitlines():
+        if line.strip() == marker:
+            chunks.append("\n".join(current))
+            current = []
+        else:
+            current.append(line)
+    chunks.append("\n".join(current))
+
+    for chunk in chunks:
         cleaned = _strip_sql_comments(chunk).rstrip(";").strip()
         if cleaned:
             cursor.execute(cleaned)
@@ -144,13 +160,18 @@ def insert_seed():
 
 def create_advanced_objects():
     banner("Step 3  Create views, functions and stored procedures")
-    adv_sql = (ROOT / "advanced.sql").read_text()
+    # Load order matters: procedures call functions (sp_book_event uses
+    # fn_seats_remaining), so functions.sql must run before procedures.sql.
+    # Views are independent and can run first.
+    files = ["views.sql", "functions.sql", "procedures.sql"]
     conn = connect(use_db=True)
     try:
         cur = conn.cursor()
-        run_script_split(cur, adv_sql)
+        for fname in files:
+            sql_text = (ROOT / fname).read_text()
+            run_script_split(cur, sql_text)
+            print(f"{fname:20s} executed ok")
         conn.commit()
-        print("advanced.sql executed ok (3 views, 2 functions, 3 procedures)")
     finally:
         conn.close()
 
