@@ -11,14 +11,14 @@
 --
 -- Why 13 tables and not 4-5 fat ones?
 --   Each split below is justified by a specific normalization rule. Collapsing
---   any of them would either violate 1NF (repeating groups), 2NF (partial
+--   any of them would either violate 1NF (Atomicity), 2NF (partial
 --   dependency on a composite key) or 3NF (transitive dependency through a
 --   non-key attribute). The price we pay is JOINs at read time; the price we
 --   would have paid otherwise is update anomalies and storage redundancy.
 --
 -- Naming conventions:
 --   - Tables: PascalCase singular (User, not Users).
---   - PKs: <table>_id, INT AUTO_INCREMENT (surrogate keys for stability).
+--   - PKs: <table>_id, INT AUTO_INCREMENT.
 --   - FKs: same column name as the referenced PK.
 --   - Indexes: idx_<table>_<column>.
 --   - Bridge tables: composite PK on the two FK columns.
@@ -48,6 +48,7 @@ USE zomato_district;
 --        the lookup tables would have one column each (just the name) and
 --        give us nothing in return except an extra JOIN. Documented as a
 --        trade-off, not an oversight.
+--  TLDR: We don't want to make keys like occupation_id or city_id.
 -- ----------------------------------------------------------------------------
 CREATE TABLE User (
     user_id          INT          AUTO_INCREMENT PRIMARY KEY,

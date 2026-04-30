@@ -34,7 +34,7 @@ USE zomato_district
 --   - Pessimistic locking: SELECT ... FOR UPDATE acquires an EXCLUSIVE
 --     (X) row lock on the Event row. Other transactions trying to book
 --     the same event block until this one commits or rolls back.
---   - Strict 2PL (S2PL): InnoDB holds X-locks until COMMIT/ROLLBACK by
+--   - Strict 2PL (S2PL): DB holds X-locks until COMMIT/ROLLBACK by
 --     default - locks are NEVER released early. This is what makes the
 --     "check seats then insert booking" sequence atomic.
 --   - SIGNAL SQLSTATE '45000': how stored procedures raise errors that
