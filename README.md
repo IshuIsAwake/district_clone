@@ -1,8 +1,15 @@
-# Zomato District clone — DBMS project
+# Elysium — DBMS project
 
-An event discovery and booking platform modelled on Zomato District. Users browse
-concerts, comedy nights, DJ sets and food festivals, filter by city/category,
-book tickets with promo codes, and leave reviews. The project has two halves:
+> Coursework submission for the end-term DBMS project (BMU, May 2026). Elysium
+> is our take on a Zomato District style event-discovery and booking platform —
+> the product framing is a direct District clone (concerts, comedy nights, DJ
+> sets, food festivals, promo codes, reviews); the *engineering* framing is a
+> query-optimization and concurrency-control study. Both halves are graded, but
+> the SQL/locking/ablation work carries the marks. See
+> [documents/DBMS_Marks_Rubrics and Viva.docx](documents/DBMS_Marks_Rubrics%20and%20Viva.docx)
+> for the rubric.
+
+The project has two halves:
 
 - **Database side** — MySQL schema with 13 tables in 3NF, full DDL/DML/DQL/TCL/DCL,
   views, stored procedures, user-defined functions, and pessimistic + optimistic
@@ -18,19 +25,19 @@ book tickets with promo codes, and leave reviews. The project has two halves:
   via `sp_book_event` (and `Booking_Offer` via `sp_apply_offer_to_booking` if
   a promo is applied).
 
-> **Project framing.** This is graded as a *query-optimization research piece*,
-> not a feature-rich Zomato clone. The frontend carries no marks; the SQL,
-> normalization rationale, and concurrency/lock comparisons are where the
-> evaluation lives. See `documents/DBMS_Marks_Rubrics and Viva.docx` for the
-> rubric and `documents/DBMS in Practice_Locking.docx` for the locking
-> requirements.
+> **Why "Elysium"?** The product is a District clone; the codebase has its own
+> identity because the deliverable is the database engineering, not the brand.
+> Frontend carries no marks — the SQL, normalization rationale, and
+> concurrency/lock comparisons are where the evaluation lives. See
+> [documents/DBMS in Practice_Locking.docx](documents/DBMS%20in%20Practice_Locking.docx)
+> for the locking requirements.
 
 ---
 
 ## Repository layout
 
 ```
-dbms_project/
+elysium/  (dbms_project/)
 ├── README.md                ← you are here
 ├── plan.md                  ← project plan (rubric mapping + task order)
 ├── .env                     ← DB credentials (git-ignored)
